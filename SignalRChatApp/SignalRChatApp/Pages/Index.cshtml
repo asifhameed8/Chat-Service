@@ -1,0 +1,71 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<body>
+    <input type="text" id="username" placeholder="Username" />
+    <input type="text" id="room" placeholder="Room Number" />
+    <input type="text" id="message" placeholder="Message" />
+    <button onclick="joinRoom()">Join Room</button>
+    <button onclick="leaveRoom()">Leave Room</button>
+    <button onclick="sendMessage()">Send Message</button>
+    <input type="text" id="newRoom" placeholder="New Room" />
+    <button onclick="changeRoom()">Change Room</button>
+    <ul id="messages"></ul>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.13/signalr.min.js"></script>
+    @*<script src="/_content/Microsoft.AspNetCore.Components.Web.Extensions/signalr/signalr.js"></script>*@
+    <script>
+        const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+
+        connection.on("ReceiveMessage", (username, message) => {
+            const li = document.createElement("li");
+            li.textContent = `${username}: ${message}`;
+            document.getElementById("messages").appendChild(li);
+        });
+
+        connection.start().catch(err => console.error(err));
+
+        function joinRoom() {
+            const room = document.getElementById("room").value;
+            connection.invoke("JoinRoom", room).catch(err => console.error(err));
+        }
+
+        function leaveRoom() {
+            const room = document.getElementById("room").value;
+            connection.invoke("LeaveRoom", room).catch(err => console.error(err));
+        }
+        function changeRoom() {
+            const oldRoom = document.getElementById("room").value;
+            const newRoom = document.getElementById("newRoom").value;
+            connection.invoke("ChangeRoom", oldRoom, newRoom).catch(err => console.error(err));
+        }
+        function sendMessage() {
+            const username = document.getElementById("username").value;
+            const message = document.getElementById("message").value;
+            const room = document.getElementById("room").value; // Get the current room
+            connection.invoke("JoinRoom", room).then(() => {
+                connection.invoke("SendMessage", username, message, room).catch(err => console.error(err));
+            }).catch(err => console.error(err));
+        }
+        $("#newRoom").on("input", function () {
+            // Get the value of textbox1
+            var value = $(this).val();
+
+            // Update the value of textbox2
+            $("#room").val(value);
+        });
+        //function sendMessage() {
+        //    const username = document.getElementById("username").value;
+        //    const message = document.getElementById("message").value;
+        //    const room = document.getElementById("room").value;
+        //    connection.invoke("SendMessage", username, message, room).catch(err => console.error(err));
+        //}
+    </script>
+</body>
+</html>
